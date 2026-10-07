@@ -1,0 +1,17 @@
+{
+  "appTitle": "To Do List",
+  "createYourProfile": "Create Your Profile",
+  "addNameAndPicture": "Add your name to get started",
+  "fullName": "Full Name",
+  "fullNameHint": "Enter your name",
+  "nameRequired": "Please enter your name",
+  "continueButton": "Continue",
+  "hello": "Hello, {name}",
+  "myTasks": "My Tasks",
+  "noTasks": "No tasks yet.\nTap + to add your first one.",
+  "addTask": "Add Task",
+  "taskHint": "What do you need to do?",
+  "add": "Add",
+  "cancel": "Cancel",
+  "changeLanguage": "Change language"
+}

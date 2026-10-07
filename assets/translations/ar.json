@@ -1,0 +1,17 @@
+{
+  "appTitle": "قائمة المهام",
+  "createYourProfile": "أنشئ ملفك الشخصي",
+  "addNameAndPicture": "أضف اسمك للبدء",
+  "fullName": "الاسم الكامل",
+  "fullNameHint": "اكتب اسمك",
+  "nameRequired": "من فضلك اكتب اسمك",
+  "continueButton": "متابعة",
+  "hello": "مرحباً، {name}",
+  "myTasks": "مهامي",
+  "noTasks": "لا توجد مهام بعد.\nاضغط + لإضافة أول مهمة.",
+  "addTask": "إضافة مهمة",
+  "taskHint": "ما الذي تريد إنجازه؟",
+  "add": "إضافة",
+  "cancel": "إلغاء",
+  "changeLanguage": "تغيير اللغة"
+}
