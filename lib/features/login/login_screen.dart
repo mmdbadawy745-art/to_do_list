@@ -1,10 +1,14 @@
-import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hive/hive.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:to_do_list/core/utils/add_constants.dart';
+import 'dart:io';
 
-import '../../core/app_colors.dart';
-import '../../core/locale_utils.dart';
-import '../home/home_screen.dart';
+import 'package:to_do_list/core/widgets/main_botton.dart';
+import 'package:to_do_list/features/home/home_screen.dart';
+import 'package:to_do_list/features/login/data/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,149 +18,142 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  XFile? _imageFile;
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
+  Future<void> pickImageFromCamera() async {
+    final image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() => _imageFile = image);
+    }
   }
 
-  void _continue() {
-    if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => HomeScreen(userName: _nameController.text.trim()),
-      ),
-    );
+  Future<void> pickImageFromGallery() async {
+    final image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _imageFile = image);
+    }
   }
+
+  Future<void> saveUserData(UserModel user) async {
+    try {
+      final box = Hive.isBoxOpen(AddConstants.userBoxName)
+          ? Hive.box<UserModel>(AddConstants.userBoxName)
+          : await Hive.openBox<UserModel>(AddConstants.userBoxName);
+      await box.put(AddConstants.currentUserKey, user);
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(userName: user.name),
+        ),
+      );
+    } on HiveError catch (error) {
+      debugPrint('Failed to save user data: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to save your profile. Please try again.')),
+      );
+    }
+  }
+  
+  var nameController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.locale.languageCode == 'ar';
-
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => toggleLocale(context),
-        backgroundColor: AppColors.primary,
-        label: Text(
-          isArabic ? 'English' : 'العربية',
-          style: TextStyle(fontSize: 14.sp, color: Colors.white),
-        ),
-        icon: const Icon(Icons.language, color: Colors.white),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 96.h),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 100.w,
-                      height: 100.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryTint,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            InkWell(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) => Padding(
+                    padding: EdgeInsets.all(16.r),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MainBotton(title: 'Camera',
+                        onTap: () {
+                          Navigator.pop(context);
+                          pickImageFromCamera();
+                        },),
+                        
+        
+                        20.verticalSpace,
+        
+                        MainBotton(title: 'Gallery',
+                        onTap: () {
+                          Navigator.pop(context); 
+                          pickImageFromGallery();
+                        },)
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 50.r,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: _imageFile == null
+                    ? null
+                    : FileImage(File(_imageFile!.path)),
+                child: _imageFile == null
+                    ? Icon(
                         Icons.person,
-                        size: 45.sp,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  32.verticalSpace,
-                  Text(
-                    'createYourProfile'.tr(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      letterSpacing: isArabic ? 0.0 : 0.5,
-                    ),
-                  ),
-                  8.verticalSpace,
-                  Text(
-                    'addNameAndPicture'.tr(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15.sp, color: Colors.grey),
-                  ),
-                  40.verticalSpace,
-                  Text(
-                    'fullName'.tr(),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  10.verticalSpace,
-                  TextFormField(
-                    controller: _nameController,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _continue(),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                            ? 'nameRequired'.tr()
-                            : null,
-                    style: TextStyle(fontSize: 16.sp, color: Colors.black87),
-                    decoration: InputDecoration(
-                      hintText: 'fullNameHint'.tr(),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 18.h,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                        borderSide: const BorderSide(color: Colors.black12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                        borderSide: const BorderSide(color: Colors.black12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  32.verticalSpace,
-                  ElevatedButton(
-                    onPressed: _continue,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primarySoft,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 18.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'continueButton'.tr(),
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+                        size: 60.r,
+                        color: Colors.grey,
+                      )
+                    : null,
               ),
             ),
-          ),
+        
+            Text(
+              'Create Your Profile',
+              style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Add your name and a profile picture',
+              style: TextStyle(fontSize: 16.sp, color: Colors.grey),
+            ),
+
+            20.verticalSpace,
+
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Full Name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+              ),
+              onChanged: (value) {
+                // Handle name input
+              },
+            ),
+
+            20.verticalSpace,
+
+            MainBotton(
+              title: 'Continue',
+              onTap: (
+        
+              ) {saveUserData(UserModel(name: nameController.text, image: _imageFile?.path ?? ''));
+              },
+            ),
+          ],
         ),
       ),
     );

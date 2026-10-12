@@ -23,6 +23,7 @@ class TodoApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
           useMaterial3: true,
+          iconTheme: const IconThemeData(color: AppColors.primary)
         ),
         home: child,
       ),
