@@ -42,5 +42,7 @@
   "status": "Status",
   "chooseColor": "Choose Color",
   "saveTask": "Save Task",
-  "taskColor": "Task color"
+  "taskColor": "Task color",
+  "taskDate": "Date",
+  "taskTime": "Time"
 }

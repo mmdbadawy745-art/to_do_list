@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/app_colors.dart';
 import '../../core/locale_utils.dart';
 import '../add_task/add_task_screen.dart';
+import 'shared_state.dart';
 import 'task_entry.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,98 +18,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<TaskEntry> _tasks = [
-    const TaskEntry(
-      title: 'Flutter UI',
-      description: 'Build Register Screen',
-      titleKey: 'sampleTaskFlutter',
-      descriptionKey: 'sampleTaskFlutterDescription',
-      color: Color(0xFF2196F3),
-      status: TaskStatus.pending,
-    ),
-    const TaskEntry(
-      title: 'Workout',
-      description: 'Gym at 6 PM',
-      titleKey: 'sampleTaskWorkout',
-      descriptionKey: 'sampleTaskWorkoutDescription',
-      color: Color(0xFF4CAF50),
-      status: TaskStatus.done,
-    ),
-    const TaskEntry(
-      title: 'Meeting',
-      description: 'Team Sync',
-      titleKey: 'sampleTaskMeeting',
-      descriptionKey: 'sampleTaskMeetingDescription',
-      color: Color(0xFFFF9800),
-      status: TaskStatus.inProgress,
-    ),
-    const TaskEntry(
-      title: 'Read Book',
-      description: 'Atomic Habits',
-      titleKey: 'sampleTaskReading',
-      descriptionKey: 'sampleTaskReadingDescription',
-      color: Color(0xFFAB27B7),
-      status: TaskStatus.pending,
-    ),
-  ];
-
-  int _totalTasks = 12;
-  int _doneTasks = 5;
-  int _pendingTasks = 7;
-
   Future<void> _addTask() async {
-    final task = await Navigator.of(context).push<TaskEntry>(
-      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
-    );
-    if (task == null || !mounted) return;
-    setState(() {
-      _tasks.add(task);
-      _totalTasks++;
-      if (task.status == TaskStatus.done) {
-        _doneTasks++;
-      } else {
-        _pendingTasks++;
-      }
-    });
-  }
-
-  void _advanceTaskStatus(int index) {
-    setState(() {
-      final task = _tasks[index];
-      final nextStatus = switch (task.status) {
-        TaskStatus.pending => TaskStatus.inProgress,
-        TaskStatus.inProgress => TaskStatus.done,
-        TaskStatus.done => TaskStatus.pending,
-      };
-
-      if (task.status == TaskStatus.done) {
-        _doneTasks--;
-        _pendingTasks++;
-      } else if (nextStatus == TaskStatus.done) {
-        _doneTasks++;
-        _pendingTasks--;
-      }
-
-      _tasks[index] = task.copyWith(status: nextStatus);
-    });
-  }
-
-  void _removeTask(TaskEntry task) {
-    setState(() {
-      final index = _tasks.indexOf(task);
-      if (index == -1) return;
-      final removedTask = _tasks.removeAt(index);
-      _totalTasks--;
-      if (removedTask.status == TaskStatus.done) {
-        _doneTasks--;
-      } else {
-        _pendingTasks--;
-      }
-    });
+    await Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => const AddTaskScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
+    final sharedState = SharedStateScope.of(context);
+    final tasks = sharedState.tasks;
     final greetingName = widget.userName.trim().isEmpty
         ? 'there'.tr()
         : widget.userName.trim();
@@ -120,11 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 100.h),
                 children: [
                   _buildHeader(greetingName),
                   SizedBox(height: 20.h),
-                  _buildSummary(),
+                  _buildSummary(sharedState),
                   SizedBox(height: 23.h),
                   Text(
                     'todaysTasks'.tr(),
@@ -136,10 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(height: 12.h),
                   ...List.generate(
-                    _tasks.length,
+                    tasks.length,
                     (index) => Padding(
                       padding: EdgeInsets.only(bottom: 12.h),
-                      child: _buildTaskCard(_tasks[index], index),
+                      child: _buildTaskCard(tasks[index], index, sharedState),
                     ),
                   ),
                 ],
@@ -223,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSummary() {
+  Widget _buildSummary(SharedState sharedState) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16.h),
       decoration: BoxDecoration(
@@ -232,15 +152,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          _SummaryValue(value: _totalTasks, label: 'tasks'.tr()),
-          _SummaryValue(value: _doneTasks, label: 'done'.tr()),
-          _SummaryValue(value: _pendingTasks, label: 'pending'.tr()),
+          _SummaryValue(value: sharedState.totalTasks, label: 'tasks'.tr()),
+          _SummaryValue(value: sharedState.doneTasks, label: 'done'.tr()),
+          _SummaryValue(value: sharedState.pendingTasks, label: 'pending'.tr()),
         ],
       ),
     );
   }
 
-  Widget _buildTaskCard(TaskEntry task, int index) {
+  Widget _buildTaskCard(TaskEntry task, int index, SharedState sharedState) {
     return Dismissible(
       key: ObjectKey(task),
       direction: DismissDirection.endToStart,
@@ -253,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) => _removeTask(task),
+      onDismissed: (_) => sharedState.removeTask(task),
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(17.r),
@@ -261,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shadowColor: Colors.black.withValues(alpha: 0.05),
         child: InkWell(
           borderRadius: BorderRadius.circular(17.r),
-          onTap: () => _advanceTaskStatus(index),
+          onTap: () => sharedState.advanceTaskStatus(index),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             child: Row(

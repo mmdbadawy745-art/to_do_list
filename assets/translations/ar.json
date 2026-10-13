@@ -42,5 +42,7 @@
   "status": "الحالة",
   "chooseColor": "اختر لوناً",
   "saveTask": "حفظ المهمة",
-  "taskColor": "لون المهمة"
+  "taskColor": "لون المهمة",
+  "taskDate": "التاريخ",
+  "taskTime": "الوقت"
 }

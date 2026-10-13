@@ -10,6 +10,8 @@ class TaskEntry {
     required this.status,
     this.titleKey,
     this.descriptionKey,
+    this.scheduledDate,
+    this.scheduledTime,
   });
 
   final String title;
@@ -18,6 +20,8 @@ class TaskEntry {
   final TaskStatus status;
   final String? titleKey;
   final String? descriptionKey;
+  final DateTime? scheduledDate;
+  final TimeOfDay? scheduledTime;
 
   TaskEntry copyWith({TaskStatus? status}) => TaskEntry(
     title: title,
@@ -26,5 +30,7 @@ class TaskEntry {
     status: status ?? this.status,
     titleKey: titleKey,
     descriptionKey: descriptionKey,
+    scheduledDate: scheduledDate,
+    scheduledTime: scheduledTime,
   );
 }
